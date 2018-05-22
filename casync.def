@@ -1,0 +1,33 @@
+Bootstrap: docker
+From: ubuntu:latest
+
+%setup
+  # Runs on host. The path to the image is $SINGULARITY_ROOTFS
+  mkdir ${SINGULARITY_ROOTFS}/logic
+  cp app.py ${SINGULARITY_ROOTFS}/logic
+  
+%post
+  # Post setup, runs inside the image
+  apt-get update
+  apt-get install -y make libcurl4-openssl-dev git wget gcc python3 python3-pip liblzma-dev pkg-config libssl-dev zlib1g-dev libzstd-dev acl-dev libfuse-dev libudev-dev 
+  pip3 install sphinx 
+  pip3 install meson ninja
+  cd /logic
+  git clone https://github.com/systemd/casync.git
+  cd casync
+  meson build
+  ninja -C build
+  ninja -C build install
+  
+  
+  
+%runscript
+  # Executes when the "singularity run" command is used
+  python3.6 /logic/app.py $@
+
+%environment
+  # environment vars
+  export PATH=/logic/casync/build:$PATH
+
+%test
+  # Test script to verify that the image is built and running correctly
